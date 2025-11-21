@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Nadrzędne funkcje</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 20px;
+            background-color: #f8f9fa;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 { color: #333; margin-bottom: 30px; }
+
+        /* Stylizacja tabeli */
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            max-width: 800px;
+            background: white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #17a2b8;
+            color: white;
+            text-transform: uppercase;
+            font-size: 14px;
+        }
+
+        /* Stylizacja inputów w tabeli */
+        .input-tresc {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-family: inherit;
+        }
+
+        /* Przyciski */
+        .btn {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            color: white;
+            font-weight: bold;
+        }
+
+        .btn-save { background-color: #28a745; } /* Zielony */
+        .btn-save:hover { background-color: #218838; }
+
+        .btn-add { background-color: #007bff; padding: 10px 20px; } /* Niebieski */
+        .btn-add:hover { background-color: #0069d9; }
+
+        /* Formularz dodawania na górze */
+        .add-form {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            width: 100%;
+            max-width: 800px;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .add-input {
+            flex-grow: 1;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .back-link {
+            margin-top: 20px;
+            color: #666;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Nadrzędne funkcje - Edycja Zasad</h1>
+
+    <form class="add-form" action="/zaczytywanie/nadrzedne/dodaj" method="POST">
+        <input type="text" name="nowaTresc" class="add-input" placeholder="Wpisz tutaj treść nowej zasady..." required>
+        <button type="submit" class="btn btn-add">Dodaj nową</button>
+    </form>
+
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 10%">ID</th>
+                <th style="width: 60%">Treść (Edytuj i zapisz)</th>
+                <th style="width: 20%">Ostatnia modyfikacja</th>
+                <th style="width: 10%">Akcja</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% zasady.forEach(function(item) { %>
+                <tr>
+                    <form action="/zaczytywanie/nadrzedne/edytuj" method="POST">
+                        
+                        <td style="font-size: 10px; color: #999;">
+                            <%= item._id %> <input type="hidden" name="id" value="<%= item._id %>"> </td>
+
+                        <td>
+                            <input type="text" name="tresc" class="input-tresc" value="<%= item.tresc %>">
+                        </td>
+
+                        <td style="font-size: 12px; color: #666;">
+                            <%= item.data %>
+                        </td>
+
+                        <td>
+                            <button type="submit" class="btn btn-save">Zapisz</button>
+                        </td>
+
+                    </form>
+                </tr>
+            <% }); %>
+            ```
+
+    </table>
+
+    <a href="/zaczytywanie" class="back-link">← Wróć do panelu Zaczytywanie</a>
+
+</body>
+</html>

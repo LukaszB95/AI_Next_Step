@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Zaczytywanie zamówień</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 50px;
+            background-color: #e9ecef;
+        }
+        
+        h1 { color: #333; }
+
+        .button-container {
+            display: flex;
+            flex-direction: column;
+            gap: 25px; /* Zwiększyłem lekko odstęp, żeby dymki się mieściły */
+            width: 100%;
+            max-width: 400px;
+        }
+
+        /* --- STYL PRZYCISKU --- */
+        .big-btn {
+            position: relative; /* To jest kluczowe dla pozycjonowania dymka */
+            display: block;
+            padding: 20px;
+            font-size: 18px;
+            text-align: center;
+            text-decoration: none;
+            color: white;
+            background-color: #17a2b8;
+            border-radius: 8px;
+            transition: background-color 0.3s, transform 0.2s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .big-btn:hover {
+            background-color: #138496;
+            transform: translateY(-2px);
+        }
+
+        /* --- TOOLTIP (DYMEK) - CSS --- */
+        
+        /* Wygląd dymka (pojawia się po najechaniu :hover) */
+        .big-btn:hover::after {
+            content: attr(data-tooltip); /* Pobiera tekst z atrybutu HTML */
+            
+            position: absolute;
+            bottom: 100%; /* Ustawia dymek nad przyciskiem */
+            left: 50%;
+            transform: translateX(-50%); /* Centruje dymek */
+            
+            margin-bottom: 10px; /* Odstęp od przycisku */
+            padding: 8px 12px;
+            background-color: #333; /* Ciemne tło */
+            color: #fff; /* Biały tekst */
+            font-size: 14px;
+            border-radius: 5px;
+            white-space: nowrap; /* Tekst w jednej linii */
+            pointer-events: none; /* Myszka "przenika" przez dymek */
+            opacity: 0;
+            animation: fadeIn 0.3s forwards; /* Animacja pojawiania */
+            z-index: 10;
+        }
+
+        /* Mały trójkącik (strzałka) pod dymkiem */
+        .big-btn:hover::before {
+            content: "";
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            margin-bottom: 5px; /* Musi dotykać dymka */
+            border-width: 5px;
+            border-style: solid;
+            border-color: #333 transparent transparent transparent; /* Trójkąt w dół */
+            opacity: 0;
+            animation: fadeIn 0.3s forwards;
+        }
+
+        /* Prosta animacja pojawiania się */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translate(-50%, 10px); }
+            to { opacity: 1; transform: translate(-50%, 0); }
+        }
+
+        .back-link {
+            margin-top: 40px;
+            color: #666;
+            text-decoration: none;
+        }
+        .back-link:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+
+    <h1>Moduł: Zaczytywanie</h1>
+
+    <div class="button-container">
+        <a href="/zaczytywanie/nadrzedne" 
+           class="big-btn" 
+           data-tooltip="Konfiguracja i główne parametry podczas składania zamówień sprzedaży">
+            Nadrzędne funkcje
+        </a>
+
+        <a href="/zaczytywanie/fundamentalne" 
+           class="big-btn" 
+           data-tooltip="Reguły nadrzędne podczas tworzenia zamówień">
+            Fundamentalne zasady
+        </a>
+
+        <a href="/zaczytywanie/uzytkownicy" 
+           class="big-btn" 
+           data-tooltip="Indywidualne ustawienia dla konkretnych użytkowników">
+            Zasady użytkowników
+        </a>
+    </div>
+
+    <a href="/" class="back-link">← Wróć do Menu Głównego</a>
+
+</body>
+</html>
