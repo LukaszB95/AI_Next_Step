@@ -2,176 +2,91 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
-    <title>Przetworzone Maile</title>
+    <title>Lista Maili</title>
     <style>
-        body {
-            font-family: sans-serif;
-            padding: 20px;
-            background-color: #f8f9fa;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
+        body { font-family: sans-serif; padding: 20px; background-color: #f8f9fa; display: flex; flex-direction: column; align-items: center; }
         h1 { color: #333; margin-bottom: 20px; }
 
-        /* Stylizacja tabeli */
-        table {
-            border-collapse: collapse;
-            width: 100%;
-            max-width: 1200px;
-            background: white;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            margin-bottom: 30px;
-            font-size: 14px;
-        }
+        /* Panel Sterowania */
+        .control-panel { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); text-align: center; width: 100%; max-width: 800px; }
+        .btn { padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; color: white; font-weight: bold; margin: 5px; }
+        .btn-start { background-color: #28a745; }
+        .btn-stop { background-color: #dc3545; }
+        .btn-sim { background-color: #ffc107; color: #333; }
 
-        th, td {
-            padding: 10px;
-            text-align: left;
-            border-bottom: 1px solid #ddd;
-            vertical-align: top;
-        }
-
-        th {
-            background-color: #6c757d;
-            color: white;
-        }
-
-        /* Pola tekstowe */
-        textarea {
-            width: 100%;
-            resize: vertical;
-            padding: 5px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            font-family: inherit;
-        }
-
-        .input-comment {
-            width: 90%;
-            padding: 8px;
-            border: 1px solid #17a2b8;
-            border-radius: 4px;
-        }
-
-        /* Przyciski */
-        .btn {
-            padding: 6px 12px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            color: white;
-            font-size: 12px;
-        }
+        /* Tabela */
+        table { border-collapse: collapse; width: 100%; max-width: 1200px; background: white; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        th, td { padding: 15px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background-color: #343a40; color: white; }
         
-        .btn-save { background-color: #28a745; margin-top: 5px; }
-        .btn-save:hover { background-color: #218838; }
+        /* Interakcja wierszy */
+        tr.mail-row { cursor: pointer; transition: background 0.2s; }
+        tr.mail-row:hover { background-color: #e9ecef; }
 
-        .btn-simulate { 
-            background-color: #ffc107; 
-            color: #333; 
-            font-size: 14px; 
-            padding: 10px 20px;
-            font-weight: bold;
-        }
+        /* Statusy - kolorki */
+        .badge { padding: 5px 10px; border-radius: 12px; font-size: 12px; color: white; font-weight: bold; text-transform: uppercase; display: inline-block; min-width: 80px; text-align: center; }
+        .status-oczekuje { background-color: #007bff; } /* Niebieski */
+        .status-w-trakcie { background-color: #6c757d; } /* Szary */
+        .status-ok { background-color: #28a745; }       /* Zielony */
+        .status-error { background-color: #dc3545; }    /* Czerwony */
 
-        .back-link {
-            margin-top: 20px;
-            color: #666;
-            text-decoration: none;
-        }
-        .back-link:hover { text-decoration: underline; }
-    </style> </head>
+        .back-link { margin-top: 20px; color: #666; text-decoration: none; }
+    </style>
+</head>
 <body>
 
-    <h1>Przetworzone zadania Mail</h1>
+    <h1>Lista Zadań (Maile)</h1>
 
-    <div style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); text-align: center; width: 100%; max-width: 600px;">
-        
-        <h3>Status usługi pobierania: 
-            <% if (statusPobierania) { %>
-                <span style="color: green; font-weight: bold;">AKTYWNA (co 60s)</span>
-            <% } else { %>
-                <span style="color: red; font-weight: bold;">ZATRZYMANA</span>
-            <% } %>
+    <div class="control-panel">
+        <h3>Status usługi: 
+            <%= statusPobierania ? '🟢 AKTYWNA' : '🔴 ZATRZYMANA' %>
         </h3>
-
-        <div style="display: flex; gap: 10px; justify-content: center; margin-top: 15px;">
-            
-            <form action="/zaczytywanie/maile/sterowanie" method="POST">
-                <input type="hidden" name="akcja" value="start">
-                <button type="submit" class="btn" style="background-color: #28a745; padding: 15px 30px; font-size: 16px;" 
-                    <%= statusPobierania ? 'disabled' : '' %> >
-                    ▶ WŁĄCZ POBIERANIE
-                </button>
-            </form>
-
-            <form action="/zaczytywanie/maile/sterowanie" method="POST">
-                <input type="hidden" name="akcja" value="stop">
-                <button type="submit" class="btn" style="background-color: #dc3545; padding: 15px 30px; font-size: 16px;"
-                    <%= !statusPobierania ? 'disabled' : '' %> >
-                    ⏹ ZATRZYMAJ
-                </button>
-            </form>
-        </div>
-
-        <p style="margin-top: 15px; font-size: 12px; color: #666;">
-            Gdy usługa jest aktywna, system łączy się z Gmailem co minutę, pobiera <strong>nieprzeczytane</strong> wiadomości i zapisuje je poniżej.
-        </p>
+        <form action="/zaczytywanie/maile/sterowanie" method="POST" style="display:inline;">
+            <input type="hidden" name="akcja" value="start">
+            <button type="submit" class="btn btn-start" <%= statusPobierania ? 'disabled' : '' %>>▶ WŁĄCZ</button>
+        </form>
+        <form action="/zaczytywanie/maile/sterowanie" method="POST" style="display:inline;">
+            <input type="hidden" name="akcja" value="stop">
+            <button type="submit" class="btn btn-stop" <%= !statusPobierania ? 'disabled' : '' %>>⏹ STOP</button>
+        </form>
+        <form action="/zaczytywanie/maile/dodaj-testowy" method="POST" style="display:inline; margin-left: 20px;">
+            <button type="submit" class="btn btn-sim">+ Symuluj Mail</button>
+        </form>
     </div>
-
-    <form action="/zaczytywanie/maile/dodaj-testowy" method="POST" style="margin-bottom: 20px;">
-        <button type="submit" class="btn btn-simulate">+ Symuluj odebranie nowego maila</button>
-    </form>
 
     <table>
         <thead>
             <tr>
                 <th style="width: 15%">Data</th>
-                <th style="width: 15%">Nadawca / Adresat</th>
-                <th style="width: 20%">Temat</th>
-                <th style="width: 30%">Treść</th>
-                <th style="width: 20%">Komentarz (Edycja)</th>
+                <th style="width: 20%">Adresat</th>
+                <th style="width: 45%">Temat</th>
+                <th style="width: 20%">Status</th>
             </tr>
         </thead>
         <tbody>
             <% maile.forEach(function(mail) { %>
-                <tr>
+                <tr class="mail-row" onclick="window.location='/zaczytywanie/maile/szczegoly/<%= mail._id %>'">
                     <td><%= mail.dataOdebrania %></td>
-
+                    <td><%= mail.adresat %></td>
+                    <td style="font-weight: bold;"><%= mail.temat %></td>
                     <td>
-                        <strong>Od:</strong> <%= mail.nadawca %><br>
-                        <strong>Do:</strong> <%= mail.adresat %>
-                    </td>
-
-                    <td><strong><%= mail.temat %></strong></td>
-
-                    <td>
-                        <textarea readonly rows="4"><%= mail.tresc %></textarea>
-                    </td>
-
-                    <td>
-                        <form action="/zaczytywanie/maile/komentarz" method="POST">
-                            <input type="hidden" name="id" value="<%= mail._id %>">
-                            
-                            <textarea name="komentarz" class="input-comment" rows="2" placeholder="Wpisz uwagę..."><%= mail.komentarz %></textarea>
-                            
-                            <button type="submit" class="btn btn-save">Zapisz komentarz</button>
-                        </form>
+                        <% 
+                            let sClass = 'status-oczekuje';
+                            if(mail.status === 'w trakcie') sClass = 'status-w-trakcie';
+                            if(mail.status === 'ok') sClass = 'status-ok';
+                            if(mail.status === 'error') sClass = 'status-error';
+                        %>
+                        <span class="badge <%= sClass %>"><%= mail.status %></span>
                     </td>
                 </tr>
             <% }); %>
-
             <% if (maile.length === 0) { %>
-                <tr>
-                    <td colspan="5" style="text-align:center; padding: 20px;">Brak maili w skrzynce. Kliknij żółty przycisk powyżej!</td>
-                </tr>
+                <tr><td colspan="4" style="text-align:center; padding: 20px;">Brak maili.</td></tr>
             <% } %>
         </tbody>
     </table>
 
-    <a href="/zaczytywanie" class="back-link">← Wróć do menu Zaczytywanie</a>
+    <a href="/zaczytywanie" class="back-link">← Wróć do menu</a>
 
 </body>
 </html>

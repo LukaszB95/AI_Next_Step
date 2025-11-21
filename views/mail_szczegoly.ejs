@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Szczegóły Maila</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background-color: #e9ecef; display: flex; justify-content: center; }
+        
+        .container {
+            background: white;
+            width: 100%;
+            max-width: 1000px;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        .header-row { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 15px; margin-bottom: 20px; }
+        h2 { margin: 0; color: #333; }
+        
+        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; background: #f8f9fa; padding: 15px; border-radius: 6px; }
+        .info-item label { font-size: 12px; color: #666; font-weight: bold; display: block; }
+        .info-item span { font-size: 14px; color: #000; }
+
+        .section { margin-bottom: 25px; }
+        .section h3 { font-size: 16px; margin-bottom: 10px; color: #555; border-left: 4px solid #007bff; padding-left: 10px; }
+
+        textarea, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-family: monospace; font-size: 14px; }
+        textarea { resize: vertical; min-height: 100px; }
+        
+        /* Pola tylko do odczytu */
+        textarea[readonly] { background-color: #eee; color: #555; }
+
+        .btn-save { background-color: #28a745; color: white; border: none; padding: 12px 25px; font-size: 16px; border-radius: 5px; cursor: pointer; float: right; }
+        .btn-save:hover { background-color: #218838; }
+        
+        .back-btn { text-decoration: none; color: #666; display: inline-block; margin-top: 15px; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <form action="/zaczytywanie/maile/aktualizuj" method="POST">
+            <input type="hidden" name="id" value="<%= mail._id %>">
+
+            <div class="header-row">
+                <h2>Szczegóły Zadania</h2>
+                <div>
+                    <label for="status" style="font-weight: bold; margin-right: 10px;">Status:</label>
+                    <select name="status" id="status" style="width: auto; padding: 5px; font-weight: bold;">
+                        <option value="oczekuje" <%= mail.status == 'oczekuje' ? 'selected' : '' %>>🔵 Oczekuje</option>
+                        <option value="w trakcie" <%= mail.status == 'w trakcie' ? 'selected' : '' %>>⚪ W trakcie</option>
+                        <option value="ok" <%= mail.status == 'ok' ? 'selected' : '' %>>🟢 OK</option>
+                        <option value="error" <%= mail.status == 'error' ? 'selected' : '' %>>🔴 Error</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="info-grid">
+                <div class="info-item"><label>Data:</label> <span><%= mail.dataOdebrania %></span></div>
+                <div class="info-item"><label>Nadawca:</label> <span><%= mail.nadawca %></span></div>
+                <div class="info-item"><label>Adresat:</label> <span><%= mail.adresat %></span></div>
+                <div class="info-item"><label>Temat:</label> <span><%= mail.temat %></span></div>
+            </div>
+
+            <div class="section">
+                <h3>Treść Wiadomości</h3>
+                <textarea readonly rows="6"><%= mail.tresc %></textarea>
+            </div>
+
+            <div class="section" style="background: #fff3cd; padding: 15px; border-radius: 4px;">
+                <h3>Wysłany Prompt (AI)</h3>
+                <textarea name="prompt" placeholder="Tu wpisz prompt wysłany do AI..."><%= mail.prompt %></textarea>
+            </div>
+
+            <div class="section" style="background: #d4edda; padding: 15px; border-radius: 4px;">
+                <h3>Odpowiedź od AI</h3>
+                <textarea name="ai_response" rows="6" placeholder="Tu pojawi się odpowiedź..."><%= mail.ai_response %></textarea>
+            </div>
+
+            <div class="section">
+                <h3>Komentarz / Notatki</h3>
+                <textarea name="komentarz" rows="2" placeholder="Własne notatki..."><%= mail.komentarz %></textarea>
+            </div>
+
+            <div style="overflow: hidden; margin-top: 20px;">
+                <a href="/zaczytywanie/maile" class="back-btn">← Anuluj i wróć do listy</a>
+                <button type="submit" class="btn-save">💾 Zapisz Zmiany</button>
+            </div>
+        </form>
+    </div>
+
+</body>
+</html>

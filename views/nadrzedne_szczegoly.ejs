@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Edycja Zasady</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background-color: #e9ecef; display: flex; justify-content: center; }
+        
+        .container {
+            background: white;
+            width: 100%;
+            max-width: 900px;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; border-bottom: 1px solid #ddd; padding-bottom: 10px;}
+        
+        .form-group { margin-bottom: 20px; }
+        label { display: block; font-weight: bold; margin-bottom: 5px; color: #555; }
+        
+        input[type="text"] { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; box-sizing: border-box; }
+        
+        /* Styl dla auto-skalującego się pola */
+        textarea { 
+            width: 100%; 
+            padding: 15px; 
+            border: 1px solid #ccc; 
+            border-radius: 4px; 
+            font-family: monospace; 
+            font-size: 14px; 
+            line-height: 1.5;
+            resize: none; /* Wyłączamy manualne skalowanie, skrypt to zrobi */
+            overflow-y: hidden; /* Ukrywamy scrollbar */
+            box-sizing: border-box;
+            min-height: 150px;
+        }
+
+        .btn-save { background-color: #007bff; color: white; padding: 12px 30px; border: none; border-radius: 4px; font-size: 16px; cursor: pointer; }
+        .btn-save:hover { background-color: #0056b3; }
+
+        .btn-delete { background-color: #dc3545; color: white; padding: 8px 15px; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; margin-left: 10px;}
+
+        .actions { display: flex; justify-content: space-between; align-items: center; margin-top: 30px; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header-row">
+            <h2 style="margin:0;">Edycja Zasady</h2>
+            
+            <form action="/zaczytywanie/nadrzedne/usun" method="POST" onsubmit="return confirm('Czy na pewno chcesz usunąć tę zasadę?');">
+                <input type="hidden" name="id" value="<%= zasada._id %>">
+                <button type="submit" class="btn-delete">🗑 Usuń</button>
+            </form>
+        </div>
+
+        <form action="/zaczytywanie/nadrzedne/aktualizuj" method="POST">
+            <input type="hidden" name="id" value="<%= zasada._id %>">
+
+            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px;">
+                <div class="form-group">
+                    <label>Nazwa Zasady:</label>
+                    <input type="text" name="nazwa" value="<%= zasada.nazwa %>" placeholder="Np. Instrukcja obsługi klienta...">
+                </div>
+
+                <div class="form-group">
+                    <label>Tag (Kategoria):</label>
+                    <input list="lista-tagow" name="tag" value="<%= zasada.tag %>" placeholder="Wybierz lub wpisz..." autocomplete="off">
+                    
+                    <datalist id="lista-tagow">
+                        <% dostepneTagi.forEach(function(tag) { %>
+                            <option value="<%= tag %>">
+                        <% }); %>
+                    </datalist>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Opis (Treść):</label>
+                <textarea name="opis" id="autoResizeTextarea" placeholder="Wpisz treść zasady..."><%= zasada.opis || zasada.tresc %></textarea>
+            </div>
+
+            <div class="actions">
+                <a href="/zaczytywanie/nadrzedne" style="color: #666; text-decoration: none;">← Anuluj i wróć</a>
+                <button type="submit" class="btn-save">💾 Zapisz Zmiany</button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        const tx = document.getElementById("autoResizeTextarea");
+        
+        const setHeight = () => {
+            tx.style.height = "auto"; // Reset height
+            tx.style.height = (tx.scrollHeight) + "px"; // Set to scroll height
+        }
+
+        tx.addEventListener("input", setHeight, false);
+        
+        // Wywołaj raz na starcie, żeby dopasować do załadowanej treści
+        window.onload = setHeight;
+    </script>
+
+</body>
+</html>

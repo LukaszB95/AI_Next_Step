@@ -10,7 +10,7 @@ const bodyParser = require('body-parser');
 const app = express();
 var urlencodedParser = bodyParser.urlencoded({ extended: false });
 
-// ZMIENNA GLOBALNA STATUSU (Musi być tutaj)
+// ZMIENNA GLOBALNA STATUSU
 let czyPobieranieAktywne = false; 
 let intervalId = null; // Uchwyt do pętli czasowej
 
@@ -24,7 +24,9 @@ mongoose.connect('mongodb://127.0.0.1:27017/csapp_db')
 // --- MODELE DANYCH ---
 
 const zasadaSchema = new mongoose.Schema({
-    tresc: String,
+    nazwa: { type: String, default: "Nowa Zasada" }, // Tytuł
+    tag: { type: String, default: "Ogólne" },       // Kategoria
+    opis: String,                                   // Główna treść (dawniej tresc)
     data: String
 });
 const Zasada = mongoose.model('Zasada', zasadaSchema);
@@ -35,7 +37,14 @@ const mailSchema = new mongoose.Schema({
     dataOdebrania: String,
     adresat: String,
     nadawca: String,
-    komentarz: String
+    komentarz: String,
+    // NOWE POLA:
+    status: { 
+        type: String, 
+        default: 'oczekuje' 
+    },
+    prompt: { type: String, default: '' },
+    ai_response: { type: String, default: '' }
 });
 const Mail = mongoose.model('Mail', mailSchema);
 
@@ -58,63 +67,112 @@ app.get('/ogolnezasadylabo', (req, res) => res.render('ogolnezasadylabo'));
 
 // --- OBSŁUGA MODUŁU: NADRZĘDNE ---
 
+// 1. Lista Zasad
 app.get('/zaczytywanie/nadrzedne', async function(req, res) {
-    const zasadyZBazy = await Zasada.find(); 
+    const zasadyZBazy = await Zasada.find().sort({ _id: -1 });
     res.render('nadrzedne', { zasady: zasadyZBazy });
 });
 
-app.post('/zaczytywanie/nadrzedne/dodaj', urlencodedParser, async function(req, res) {
-    const nowaZasada = new Zasada({
-        tresc: req.body.nowaTresc,
-        data: new Date().toLocaleString()
-    });
-    await nowaZasada.save();
-    res.redirect('/zaczytywanie/nadrzedne');
+// 2. Szczegóły Zasady (Edycja)
+app.get('/zaczytywanie/nadrzedne/szczegoly/:id', async (req, res) => {
+    try {
+        const zasada = await Zasada.findById(req.params.id);
+        // Pobieramy unikalne tagi z bazy, aby podpowiedzieć je w formularzu
+        const unikalneTagi = await Zasada.distinct("tag");
+        
+        if (!zasada) return res.status(404).send('Nie znaleziono zasady');
+        
+        res.render('nadrzedne_szczegoly', { 
+            zasada: zasada,
+            dostepneTagi: unikalneTagi 
+        });
+    } catch (err) {
+        console.error(err);
+        res.redirect('/zaczytywanie/nadrzedne');
+    }
 });
 
-app.post('/zaczytywanie/nadrzedne/edytuj', urlencodedParser, async function(req, res) {
-    const idDoEdycji = req.body.id;
-    await Zasada.findByIdAndUpdate(idDoEdycji, { 
-        tresc: req.body.tresc, 
+// 3. Dodawanie nowej zasady (Tworzy pustą i przekierowuje do edycji)
+app.post('/zaczytywanie/nadrzedne/dodaj', async function(req, res) {
+    const nowa = new Zasada({
+        nazwa: "Nowa Zasada",
+        tag: "Ogólne",
+        opis: "",
         data: new Date().toLocaleString()
     });
+    const zapisana = await nowa.save();
+    // Od razu idziemy do edycji tego nowego wpisu
+    res.redirect(`/zaczytywanie/nadrzedne/szczegoly/${zapisana._id}`);
+});
+
+// 4. Aktualizacja (Zapis zmian)
+app.post('/zaczytywanie/nadrzedne/aktualizuj', urlencodedParser, async function(req, res) {
+    const { id, nazwa, tag, opis } = req.body;
+    await Zasada.findByIdAndUpdate(id, { 
+        nazwa, 
+        tag, 
+        opis, 
+        data: new Date().toLocaleString() // Aktualizujemy datę modyfikacji
+    });
+    res.redirect(`/zaczytywanie/nadrzedne/szczegoly/${id}`);
+});
+
+// 5. Usuwanie (Opcjonalnie, przydatne przy zarządzaniu)
+app.post('/zaczytywanie/nadrzedne/usun', urlencodedParser, async function(req, res) {
+    await Zasada.findByIdAndDelete(req.body.id);
     res.redirect('/zaczytywanie/nadrzedne');
 });
 
 
 // --- OBSŁUGA MODUŁU: MAILE ---
 
-// 1. Wyświetlanie listy maili (TO JEST TA JEDYNA, POPRAWNA WERSJA)
-app.get('/zaczytywanie/maile', async function(req, res) {
-    const maileZBazy = await Mail.find().sort({ _id: -1 }); // Najnowsze na górze
-    
-    res.render('maile', { 
-        maile: maileZBazy,
-        statusPobierania: czyPobieranieAktywne // Przekazujemy status do widoku
+// 1. Wyświetlanie listy maili
+app.get('/zaczytywanie/maile', async (req, res) => {
+    const maileZBazy = await Mail.find().sort({ _id: -1 });
+    res.render('maile', { maile: maileZBazy, statusPobierania: czyPobieranieAktywne });
+});
+
+// 2. Wyświetlanie szczegółów maila (Nowy widok)
+app.get('/zaczytywanie/maile/szczegoly/:id', async (req, res) => {
+    try {
+        const mail = await Mail.findById(req.params.id);
+        if (!mail) return res.status(404).send('Nie znaleziono maila');
+        res.render('mail_szczegoly', { mail: mail });
+    } catch (err) {
+        console.error(err);
+        res.redirect('/zaczytywanie/maile');
+    }
+});
+
+// 3. Aktualizacja szczegółów (Zapis z nowego widoku)
+app.post('/zaczytywanie/maile/aktualizuj', urlencodedParser, async (req, res) => {
+    const { id, status, komentarz, prompt, ai_response } = req.body;
+    await Mail.findByIdAndUpdate(id, { 
+        status, 
+        komentarz, 
+        prompt, 
+        ai_response 
     });
+    res.redirect(`/zaczytywanie/maile/szczegoly/${id}`);
 });
 
-// 2. Zapisywanie komentarza
-app.post('/zaczytywanie/maile/komentarz', urlencodedParser, async function(req, res) {
-    await Mail.findByIdAndUpdate(req.body.id, { komentarz: req.body.komentarz });
-    res.redirect('/zaczytywanie/maile');
-});
-
-// 3. Symulacja maila (testowa)
-app.post('/zaczytywanie/maile/dodaj-testowy', async function(req, res) {
-    const nowyMail = new Mail({
-        temat: "Zamówienie nr " + Math.floor(Math.random() * 1000),
-        tresc: "Testowa wiadomość...",
+// 4. Dodawanie testowego maila (Symulacja)
+app.post('/zaczytywanie/maile/dodaj-testowy', async (req, res) => {
+    await new Mail({
+        temat: "Test " + Math.floor(Math.random() * 1000), 
+        tresc: "Przykładowa treść maila testowego...", 
         dataOdebrania: new Date().toLocaleString(),
-        adresat: "biuro@csapp.pl",
-        nadawca: "klient@firma.pl",
-        komentarz: ""
-    });
-    await nowyMail.save();
+        adresat: "ja", 
+        nadawca: "System Testowy", 
+        komentarz: "",
+        status: "oczekuje",
+        prompt: "",
+        ai_response: ""
+    }).save();
     res.redirect('/zaczytywanie/maile');
 });
 
-// 4. Sterowanie automatycznym pobieraniem (START/STOP)
+// 5. Sterowanie automatycznym pobieraniem (START/STOP)
 app.post('/zaczytywanie/maile/sterowanie', urlencodedParser, function(req, res) {
     const akcja = req.body.akcja;
 
@@ -143,11 +201,7 @@ const config = {
         host: 'imap.gmail.com',
         port: 993,
         tls: true,
-        // --- DODAJ TE LINIE PONIŻEJ ---
-        tlsOptions: { 
-            rejectUnauthorized: false 
-        },
-        // ------------------------------
+        tlsOptions: { rejectUnauthorized: false },
         authTimeout: 10000
     }
 };
@@ -181,9 +235,10 @@ async function pobierzMaile() {
                     temat: mail.subject,
                     tresc: mail.text || "Tylko HTML",
                     dataOdebrania: new Date().toLocaleString(),
-                    adresat: process.env.GMAIL_USER, // Uprościłem dla testów
+                    adresat: process.env.GMAIL_USER,
                     nadawca: mail.from ? mail.from.text : "Nieznany",
-                    komentarz: "Automatycznie pobrano z Gmaila"
+                    komentarz: "Auto-IMAP",
+                    status: "oczekuje" // Ustawiamy status dla nowych maili z IMAP
                 });
 
                 await nowyMail.save();
@@ -196,7 +251,6 @@ async function pobierzMaile() {
         connection.end();
     } catch (err) {
         console.error("BŁĄD POBIERANIA MAILI:", err);
-        // Jeśli błąd logowania, wyłącz automat żeby nie zablokować konta
         if (err.code === 'AUTHENTICATIONFAILED') {
             console.log("Wyłączam automat z powodu błędu hasła.");
             czyPobieranieAktywne = false;
